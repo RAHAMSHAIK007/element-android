@@ -95,6 +95,7 @@ class VectorApplication :
     @Inject lateinit var pinLocker: PinLocker
     @Inject lateinit var callManager: WebRtcCallManager
     @Inject lateinit var invitesAcceptor: InvitesAcceptor
+    @Inject lateinit var autoRageShaker: AutoRageShaker
     @Inject lateinit var vectorFileLogger: VectorFileLogger
 
     // font thread handler
@@ -114,6 +115,7 @@ class VectorApplication :
         super.onCreate()
         appContext = this
         invitesAcceptor.initialize()
+        autoRageShaker.initialize()
         vectorUncaughtExceptionHandler.activate(this)
 
         // Remove Log handler statically added by Jitsi
