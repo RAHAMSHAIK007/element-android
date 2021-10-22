@@ -89,6 +89,7 @@ import org.matrix.android.sdk.internal.di.MoshiProvider
 import org.matrix.android.sdk.internal.di.UserId
 import org.matrix.android.sdk.internal.extensions.foldToCallback
 import org.matrix.android.sdk.internal.session.SessionScope
+import org.matrix.android.sdk.internal.session.StreamEventsManager
 import org.matrix.android.sdk.internal.session.room.membership.LoadRoomMembersTask
 import org.matrix.android.sdk.internal.task.TaskExecutor
 import org.matrix.android.sdk.internal.task.TaskThread
@@ -167,7 +168,8 @@ internal class DefaultCryptoService @Inject constructor(
         private val coroutineDispatchers: MatrixCoroutineDispatchers,
         private val taskExecutor: TaskExecutor,
         private val cryptoCoroutineScope: CoroutineScope,
-        private val eventDecryptor: EventDecryptor
+        private val eventDecryptor: EventDecryptor,
+        private val liveEventManager: Lazy<StreamEventsManager>
 ) : CryptoService {
 
     private val isStarting = AtomicBoolean(false)
@@ -763,6 +765,7 @@ internal class DefaultCryptoService @Inject constructor(
                 }
             }
         }
+        liveEventManager.get().dispatchOnLiveToDevice(event)
     }
 
     /**

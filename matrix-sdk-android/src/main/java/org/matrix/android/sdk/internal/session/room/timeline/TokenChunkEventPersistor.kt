@@ -17,6 +17,7 @@
 package org.matrix.android.sdk.internal.session.room.timeline
 
 import com.zhuinden.monarchy.Monarchy
+import dagger.Lazy
 import io.realm.Realm
 import org.matrix.android.sdk.api.session.events.model.EventType
 import org.matrix.android.sdk.api.session.events.model.toModel
@@ -40,6 +41,7 @@ import org.matrix.android.sdk.internal.database.query.findLastForwardChunkOfRoom
 import org.matrix.android.sdk.internal.database.query.getOrCreate
 import org.matrix.android.sdk.internal.database.query.where
 import org.matrix.android.sdk.internal.di.SessionDatabase
+import org.matrix.android.sdk.internal.session.StreamEventsManager
 import org.matrix.android.sdk.internal.session.room.summary.RoomSummaryEventsHelper
 import org.matrix.android.sdk.internal.util.awaitTransaction
 import timber.log.Timber
@@ -48,7 +50,9 @@ import javax.inject.Inject
 /**
  * Insert Chunk in DB, and eventually merge with existing chunk event
  */
-internal class TokenChunkEventPersistor @Inject constructor(@SessionDatabase private val monarchy: Monarchy) {
+internal class TokenChunkEventPersistor @Inject constructor(
+        @SessionDatabase private val monarchy: Monarchy,
+        private val liveEventManager: Lazy<StreamEventsManager>) {
 
     /**
      * <pre>
@@ -212,6 +216,7 @@ internal class TokenChunkEventPersistor @Inject constructor(@SessionDatabase pri
             val ageLocalTs = event.unsignedData?.age?.let { now - it }
             eventIds.add(event.eventId)
             val eventEntity = event.toEntity(roomId, SendState.SYNCED, ageLocalTs).copyToRealmOrIgnore(realm, EventInsertType.PAGINATION)
+
             if (event.type == EventType.STATE_ROOM_MEMBER && event.stateKey != null) {
                 val contentToUse = if (direction == PaginationDirection.BACKWARDS) {
                     event.prevContent
@@ -220,7 +225,7 @@ internal class TokenChunkEventPersistor @Inject constructor(@SessionDatabase pri
                 }
                 roomMemberContentsByUser[event.stateKey] = contentToUse.toModel<RoomMemberContent>()
             }
-
+            liveEventManager.get().dispatchPaginatedEventReceived(event, roomId)
             currentChunk.addTimelineEvent(roomId, eventEntity, direction, roomMemberContentsByUser)
         }
         // Find all the chunks which contain at least one event from the list of eventIds
