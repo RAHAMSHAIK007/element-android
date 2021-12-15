@@ -42,4 +42,7 @@
 
     <!--  Preview Url  -->
     <dimen name="preview_url_view_corner_radius">8dp</dimen>
+
+    <!--  Onboarding   -->
+    <dimen name="ftue_auth_gutter">16dp</dimen>
 </resources>
